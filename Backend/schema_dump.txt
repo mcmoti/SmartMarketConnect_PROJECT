@@ -1,0 +1,346 @@
+
+Model: User (App: smc_backend.apps.users)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - password: CharField
+    - last_login: DateTimeField
+    - is_superuser: BooleanField
+    - username: CharField
+    - first_name: CharField
+    - last_name: CharField
+    - email: CharField
+    - is_staff: BooleanField
+    - date_joined: DateTimeField
+    - phone_number: CharField
+    - role: CharField
+    - profile_image: FileField
+    - bio: TextField
+    - location: CharField
+    - profile_data: JSONField
+    - latitude: DecimalField
+    - longitude: DecimalField
+    - is_verified: BooleanField
+    - is_active: BooleanField
+    - created_at: DateTimeField
+    - updated_at: DateTimeField
+    - groups (M2M): ManyToManyField -> Group
+    - user_permissions (M2M): ManyToManyField -> Permission
+
+Model: StaffLog (App: smc_backend.apps.users)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - farmer: ForeignKey -> User
+    - staff_name: CharField
+    - role: CharField
+    - hours: DecimalField
+    - date: DateField
+    - rate_per_hour: DecimalField
+    - created_at: DateTimeField
+    - updated_at: DateTimeField
+
+Model: ContactInquiry (App: smc_backend.apps.users)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - user: ForeignKey -> User
+    - name: CharField
+    - email: CharField
+    - subject: CharField
+    - message: TextField
+    - status: CharField
+    - created_at: DateTimeField
+
+Model: Product (App: smc_backend.apps.products)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - farmer: ForeignKey -> User
+    - name: CharField
+    - category: CharField
+    - quantity: DecimalField
+    - unit: CharField
+    - price: DecimalField
+    - location: CharField
+    - image: FileField
+    - photo_urls: JSONField
+    - description: TextField
+    - expected_harvest_date: DateField
+    - quality_grade: CharField
+    - availability: CharField
+    - status: CharField
+    - created_at: DateTimeField
+    - updated_at: DateTimeField
+
+Model: Bid (App: smc_backend.apps.products)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - product: ForeignKey -> Product
+    - buyer: ForeignKey -> User
+    - bid_price: DecimalField
+    - quantity_bid: DecimalField
+    - total_bid_amount: DecimalField
+    - message: TextField
+    - counter_price: DecimalField
+    - status: CharField
+    - created_at: DateTimeField
+    - updated_at: DateTimeField
+
+Model: InventoryItem (App: smc_backend.apps.products)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - farmer: ForeignKey -> User
+    - crop: CharField
+    - quantity_kg: DecimalField
+    - expected_harvest_date: DateField
+    - notes: TextField
+    - photo_urls: JSONField
+    - category: CharField
+    - price: DecimalField
+    - location: CharField
+    - is_listed: BooleanField
+    - created_at: DateTimeField
+    - updated_at: DateTimeField
+
+Model: MarketPrice (App: smc_backend.apps.market)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - crop_name: CharField
+    - category: CharField
+    - market: CharField
+    - unit_price: DecimalField
+    - unit: CharField
+    - min_price: DecimalField
+    - max_price: DecimalField
+    - average_price: DecimalField
+    - price_trend: CharField
+    - source: CharField
+    - recorded_at: DateTimeField
+    - created_at: DateTimeField
+    - updated_at: DateTimeField
+
+Model: Transaction (App: smc_backend.apps.transactions)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - user: ForeignKey -> User
+    - amount: DecimalField
+    - transaction_type: CharField
+    - status: CharField
+    - cart: ForeignKey -> Cart
+    - bid: ForeignKey -> Bid
+    - credit_request: ForeignKey -> CreditRequest
+    - mpesa_reference: CharField
+    - description: TextField
+    - created_at: DateTimeField
+    - updated_at: DateTimeField
+    - completed_at: DateTimeField
+
+Model: Order (App: smc_backend.apps.transactions)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - buyer: ForeignKey -> User
+    - farmer: ForeignKey -> User
+    - product: ForeignKey -> Product
+    - transaction: ForeignKey -> Transaction
+    - quantity: DecimalField
+    - unit_price: DecimalField
+    - total_price: DecimalField
+    - payment_term: CharField
+    - amount_paid: DecimalField
+    - payment_status: CharField
+    - phone_number: CharField
+    - status: CharField
+    - notes: TextField
+    - created_at: DateTimeField
+    - updated_at: DateTimeField
+
+Model: Invoice (App: smc_backend.apps.transactions)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - order: OneToOneField -> Order
+    - buyer: ForeignKey -> User
+    - farmer: ForeignKey -> User
+    - total_amount: DecimalField
+    - amount_paid: DecimalField
+    - balance_due: DecimalField
+    - due_date: DateTimeField
+    - status: CharField
+    - created_at: DateTimeField
+    - updated_at: DateTimeField
+
+Model: Receipt (App: smc_backend.apps.transactions)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - order: ForeignKey -> Order
+    - transaction: ForeignKey -> Transaction
+    - receipt_number: CharField
+    - amount: DecimalField
+    - payment_method: CharField
+    - notes: TextField
+    - created_at: DateTimeField
+
+Model: MpesaTransaction (App: smc_backend.apps.payments)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - user: ForeignKey -> User
+    - checkout_request_id: CharField
+    - merchant_request_id: CharField
+    - mpesa_receipt_number: CharField
+    - phone_number: CharField
+    - amount: DecimalField
+    - account_reference: CharField
+    - description: CharField
+    - status: CharField
+    - result_code: IntegerField
+    - result_description: TextField
+    - created_at: DateTimeField
+    - updated_at: DateTimeField
+    - completed_at: DateTimeField
+
+Model: CreditorProfile (App: smc_backend.apps.credit)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - creditor: OneToOneField -> User
+    - institution_name: CharField
+    - description: TextField
+    - logo: FileField
+    - interest_rate_prime: DecimalField
+    - interest_rate_low: DecimalField
+    - interest_rate_medium: DecimalField
+    - interest_rate_high: DecimalField
+    - min_loan_amount: DecimalField
+    - max_loan_amount: DecimalField
+    - is_accepting_applications: BooleanField
+    - created_at: DateTimeField
+    - updated_at: DateTimeField
+
+Model: CreditScore (App: smc_backend.apps.credit)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - farmer: OneToOneField -> User
+    - cashflow_score: IntegerField
+    - consistency_score: IntegerField
+    - collateral_score: IntegerField
+    - overall_score: IntegerField
+    - total_transactions: IntegerField
+    - total_sales_volume: DecimalField
+    - average_transaction_value: DecimalField
+    - avg_monthly_cashflow: DecimalField
+    - days_on_platform: IntegerField
+    - active_listings_count: IntegerField
+    - completed_trades: IntegerField
+    - risk_level: CharField
+    - prime_eligible: BooleanField
+    - created_at: DateTimeField
+    - updated_at: DateTimeField
+    - last_calculated: DateTimeField
+
+Model: CreditRequest (App: smc_backend.apps.credit)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - farmer: ForeignKey -> User
+    - target_creditor: ForeignKey -> User
+    - amount_requested: DecimalField
+    - purpose: TextField
+    - duration_months: IntegerField
+    - supporting_documents: JSONField
+    - collateral_description: TextField
+    - collateral_value: DecimalField
+    - credit_score_at_request: IntegerField
+    - recommended_amount: DecimalField
+    - risk_classification: CharField
+    - loan_to_cashflow_ratio: DecimalField
+    - suggested_interest_rate: DecimalField
+    - status: CharField
+    - reviewed_by: ForeignKey -> User
+    - review_notes: TextField
+    - is_approved: BooleanField
+    - approval_amount: DecimalField
+    - interest_rate: DecimalField
+    - created_at: DateTimeField
+    - reviewed_at: DateTimeField
+    - approved_at: DateTimeField
+
+Model: Cart (App: smc_backend.apps.cart)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - buyer: OneToOneField -> User
+    - created_at: DateTimeField
+    - updated_at: DateTimeField
+
+Model: CartItem (App: smc_backend.apps.cart)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - cart: ForeignKey -> Cart
+    - product: ForeignKey -> Product
+    - quantity: DecimalField
+    - added_at: DateTimeField
+    - updated_at: DateTimeField
+
+Model: Conversation (App: smc_backend.apps.chat)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - participant1: ForeignKey -> User
+    - participant2: ForeignKey -> User
+    - created_at: DateTimeField
+    - updated_at: DateTimeField
+
+Model: Message (App: smc_backend.apps.chat)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - conversation: ForeignKey -> Conversation
+    - sender: ForeignKey -> User
+    - content: BinaryField
+    - attachment_url: CharField
+    - is_read: BooleanField
+    - created_at: DateTimeField
+
+Model: Review (App: smc_backend.apps.reviews)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - buyer: ForeignKey -> User
+    - product: ForeignKey -> Product
+    - transaction: OneToOneField -> Transaction
+    - rating: IntegerField
+    - comment: TextField
+    - verified_purchase: BooleanField
+    - created_at: DateTimeField
+    - updated_at: DateTimeField
+
+Model: FarmerAnalytics (App: smc_backend.apps.analytics)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - farmer: OneToOneField -> User
+    - total_sales_count: IntegerField
+    - total_revenue: DecimalField
+    - average_sale_value: DecimalField
+    - total_products_listed: IntegerField
+    - active_products: IntegerField
+    - sold_out_products: IntegerField
+    - total_bids_received: IntegerField
+    - bids_accepted: IntegerField
+    - acceptance_rate: FloatField
+    - average_rating: FloatField
+    - total_reviews: IntegerField
+    - created_at: DateTimeField
+    - updated_at: DateTimeField
+
+Model: BuyerPreference (App: smc_backend.apps.geo)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - buyer: OneToOneField -> User
+    - preferred_crops: JSONField
+    - search_radius_km: IntegerField
+    - min_rating: FloatField
+    - notify_on_match: BooleanField
+    - created_at: DateTimeField
+    - updated_at: DateTimeField
+
+Model: BuyerFarmerMatch (App: smc_backend.apps.geo)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - buyer: ForeignKey -> User
+    - farmer: ForeignKey -> User
+    - distance_km: FloatField
+    - match_score: IntegerField
+    - is_active: BooleanField
+    - interaction_count: IntegerField
+    - created_at: DateTimeField
+    - last_interaction: DateTimeField
