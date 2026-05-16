@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { format, subMonths, isSameMonth, parseISO } from "date-fns";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import {
   PieChart,
   Pie,
@@ -15,7 +17,7 @@ import {
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowDown, ArrowUp, Calendar, Download } from "lucide-react";
+import { ArrowDown, ArrowUp, Calendar, Download, Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 interface Payment {
@@ -45,6 +47,38 @@ const COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#8b5cf6", "#ec4899", "#14b8a6"
 const FarmerAnalyticsDashboard: React.FC<Props> = ({ payments, staffHours }) => {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleDownloadPDF = async () => {
+    const element = document.getElementById("analytics-dashboard");
+    if (!element) return;
+    
+    setIsExporting(true);
+    try {
+      // Temporarily hide action buttons for cleaner PDF
+      const actionButtons = document.getElementById("analytics-actions");
+      if (actionButtons) actionButtons.style.visibility = "hidden";
+
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true, logging: false });
+      
+      if (actionButtons) actionButtons.style.visibility = "visible";
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Farmer_Analytics_${fromDate || 'start'}_to_${toDate || 'end'}.pdf`);
+    } catch (error) {
+      console.error("Error generating PDF", error);
+      const actionButtons = document.getElementById("analytics-actions");
+      if (actionButtons) actionButtons.style.visibility = "visible";
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const data = useMemo(() => {
     let filteredPayments = payments;
@@ -155,23 +189,28 @@ const FarmerAnalyticsDashboard: React.FC<Props> = ({ payments, staffHours }) => 
   }, [payments, staffHours, fromDate, toDate]);
 
   return (
-    <div className="space-y-6">
+    <div id="analytics-dashboard" className="space-y-6 bg-background p-2 rounded-xl">
       {/* Header Area */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card p-4 rounded-xl shadow-sm border border-border">
         <div>
           <h2 className="text-xl font-bold text-foreground">Financial Reports</h2>
           <p className="text-xs text-muted-foreground mt-1">Data refreshed: {new Date().toLocaleString()}</p>
+          {(fromDate || toDate) && (
+            <p className="text-sm font-medium text-primary mt-2">
+              Reporting Period: {fromDate ? format(parseISO(fromDate), "PPP") : "Beginning"} — {toDate ? format(parseISO(toDate), "PPP") : "Present"}
+            </p>
+          )}
         </div>
-        <div className="flex flex-wrap items-center gap-3">
+        <div id="analytics-actions" className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">From</span>
             <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="h-9 w-[130px] text-xs" />
             <span className="text-xs text-muted-foreground">To</span>
             <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="h-9 w-[130px] text-xs" />
           </div>
-          <Button size="sm" variant="outline" className="h-9"><Calendar className="mr-2 h-4 w-4" /> Apply</Button>
-          <Button size="sm" variant="outline" className="h-9"><Download className="mr-2 h-4 w-4" /> Excel</Button>
-          <Button size="sm" variant="outline" className="h-9"><Download className="mr-2 h-4 w-4" /> PDF</Button>
+          <Button size="sm" variant="outline" className="h-9" onClick={handleDownloadPDF} disabled={isExporting}>
+            {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />} PDF
+          </Button>
         </div>
       </div>
 
@@ -181,7 +220,7 @@ const FarmerAnalyticsDashboard: React.FC<Props> = ({ payments, staffHours }) => 
         <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-5 relative overflow-hidden">
           <div className="relative z-10">
             <p className="text-xs font-semibold text-emerald-800 uppercase tracking-wider mb-1">Total Income</p>
-            <h3 className="text-2xl font-bold text-emerald-900">KSH {data.totalIncome.toLocaleString()}</h3>
+            <h3 className="text-2xl font-bold text-emerald-900">KSH {data.totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
             <p className="text-xs text-emerald-700 mt-2 flex items-center">
               <ArrowUp className="h-3 w-3 mr-1" /> {data.incomeChange}% vs last month
             </p>
@@ -192,7 +231,7 @@ const FarmerAnalyticsDashboard: React.FC<Props> = ({ payments, staffHours }) => 
         <div className="bg-rose-50 border border-rose-100 rounded-xl p-5 relative overflow-hidden">
           <div className="relative z-10">
             <p className="text-xs font-semibold text-rose-800 uppercase tracking-wider mb-1">Total Expenses</p>
-            <h3 className="text-2xl font-bold text-rose-900">KSH {data.totalExpenses.toLocaleString()}</h3>
+            <h3 className="text-2xl font-bold text-rose-900">KSH {data.totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
             <p className="text-xs text-rose-700 mt-2 flex items-center">
               <ArrowUp className="h-3 w-3 mr-1" /> {data.expenseChange}% vs last month
             </p>
@@ -203,7 +242,7 @@ const FarmerAnalyticsDashboard: React.FC<Props> = ({ payments, staffHours }) => 
         <div className="bg-blue-600 border border-blue-500 rounded-xl p-5 relative overflow-hidden text-white shadow-md">
           <div className="relative z-10">
             <p className="text-xs font-semibold text-blue-100 uppercase tracking-wider mb-1">Net Balance</p>
-            <h3 className="text-2xl font-bold text-white">KSH {data.netBalance.toLocaleString()}</h3>
+            <h3 className="text-2xl font-bold text-white">KSH {data.netBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
             <p className="text-xs text-blue-200 mt-2">Income minus expenses</p>
           </div>
         </div>
@@ -241,7 +280,7 @@ const FarmerAnalyticsDashboard: React.FC<Props> = ({ payments, staffHours }) => 
                     <Cell fill="#10b981" />
                     <Cell fill="#ef4444" />
                   </Pie>
-                  <Tooltip formatter={(value) => `KSH ${Number(value).toLocaleString()}`} />
+                  <Tooltip formatter={(value) => `KSH ${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
                   <Legend verticalAlign="bottom" height={36} iconType="circle" />
                 </PieChart>
               </ResponsiveContainer>
@@ -266,7 +305,7 @@ const FarmerAnalyticsDashboard: React.FC<Props> = ({ payments, staffHours }) => 
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#6b7280" }} tickFormatter={(val) => val >= 1000 ? `${val/1000}k` : val} />
-                <Tooltip formatter={(value) => `KSH ${Number(value).toLocaleString()}`} cursor={{ fill: 'transparent' }} />
+                <Tooltip formatter={(value) => `KSH ${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} cursor={{ fill: 'transparent' }} />
                 <Legend verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ fontSize: '12px', paddingBottom: '10px' }} />
                 <Bar dataKey="Income" fill="#3b82f6" radius={[2, 2, 0, 0]} maxBarSize={30} />
                 <Bar dataKey="Expenses" fill="#ef4444" radius={[2, 2, 0, 0]} maxBarSize={30} />
@@ -298,7 +337,7 @@ const FarmerAnalyticsDashboard: React.FC<Props> = ({ payments, staffHours }) => 
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => `KSH ${Number(value).toLocaleString()}`} />
+                  <Tooltip formatter={(value) => `KSH ${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
                 </PieChart>
               </ResponsiveContainer>
              </div>
@@ -310,7 +349,7 @@ const FarmerAnalyticsDashboard: React.FC<Props> = ({ payments, staffHours }) => 
                       <span className="text-muted-foreground">{(data.totalIncome > 0 ? (cat.value / data.totalIncome * 100) : 0).toFixed(1)}%</span>
                     </div>
                     <Progress value={data.totalIncome > 0 ? (cat.value / data.totalIncome * 100) : 0} className="h-1.5" indicatorClassName={`bg-[${COLORS[index % COLORS.length]}]`} />
-                    <p className="text-[10px] text-muted-foreground mt-0.5">KSH {cat.value.toLocaleString()}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">KSH {cat.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                   </div>
                 ))}
              </div>
@@ -337,7 +376,7 @@ const FarmerAnalyticsDashboard: React.FC<Props> = ({ payments, staffHours }) => 
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => `KSH ${Number(value).toLocaleString()}`} />
+                  <Tooltip formatter={(value) => `KSH ${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
                 </PieChart>
               </ResponsiveContainer>
              </div>
@@ -349,7 +388,7 @@ const FarmerAnalyticsDashboard: React.FC<Props> = ({ payments, staffHours }) => 
                       <span className="text-muted-foreground">{(data.totalExpenses > 0 ? (cat.value / data.totalExpenses * 100) : 0).toFixed(1)}%</span>
                     </div>
                     <Progress value={data.totalExpenses > 0 ? (cat.value / data.totalExpenses * 100) : 0} className="h-1.5" indicatorClassName={`bg-rose-500`} />
-                    <p className="text-[10px] text-muted-foreground mt-0.5">KSH {cat.value.toLocaleString()}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">KSH {cat.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                   </div>
                 ))}
              </div>

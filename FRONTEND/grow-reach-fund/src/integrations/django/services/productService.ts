@@ -45,7 +45,7 @@ export interface Bid {
   quantity_kg: number;
   message?: string;
   counter_price?: number | null;
-  status: "pending" | "accepted" | "rejected" | "countered";
+  status: "pending" | "accepted" | "rejected" | "countered" | "checked_out";
   created_at: string;
   updated_at: string;
 }

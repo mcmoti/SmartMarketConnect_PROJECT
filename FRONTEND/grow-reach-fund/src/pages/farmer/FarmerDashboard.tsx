@@ -57,6 +57,7 @@ const InventoryCharts = lazy(() => import("@/components/farmer/InventoryCharts")
 import { BillingAndInvoices } from "@/components/orders/BillingAndInvoices";
 import UserProfileDialog from "@/components/layout/UserProfileDialog";
 import { SMCCopilot } from "@/components/SMCCopilot";
+import LiveMarketPriceBanner from "@/components/marketplace/LiveMarketPriceBanner";
 
 type Tab = "inventory" | "listings" | "orders" | "bids" | "payments" | "staff" | "prices" | "loans" | "analytics" | "copilot";
 
@@ -78,6 +79,7 @@ const badgeStyles: Record<string, string> = {
   accepted: "bg-primary/10 text-primary",
   rejected: "bg-destructive/10 text-destructive",
   countered: "bg-accent/20 text-accent-foreground",
+  checked_out: "bg-emerald-500/20 text-emerald-700",
   approved: "bg-primary/10 text-primary",
   disbursed: "bg-accent/20 text-accent-foreground",
 };
@@ -130,6 +132,8 @@ const FarmerDashboard = () => {
     });
     return Object.entries(grouped).map(([month, revenue]) => ({ month, revenue }));
   }, [payments]);
+
+  const uniqueCrops = Array.from(new Set(inventory.map((item) => item.crop.toLowerCase())));
 
   const handleLogout = async () => {
     await signOut();
@@ -295,6 +299,7 @@ const FarmerDashboard = () => {
         {/* Scrollable Content */}
         <main className="flex-1 overflow-y-auto p-6 md:p-8">
           <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <LiveMarketPriceBanner crops={uniqueCrops} />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-card p-5 rounded-xl shadow-soft border border-border">
             <p className="text-sm text-muted-foreground">Inventory Items</p>

@@ -133,6 +133,7 @@ class Bid(models.Model):
         ('accepted', 'Accepted'),
         ('rejected', 'Rejected'),
         ('countered', 'Countered'),
+        ('checked_out', 'Checked Out'),
     ]
     
     product = models.ForeignKey(

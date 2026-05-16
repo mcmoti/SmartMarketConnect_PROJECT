@@ -52,6 +52,8 @@ const Marketplace = () => {
     return matchesSearch && matchesCategory;
   });
 
+  const uniqueCrops = Array.from(new Set(listings.map(l => l.crop_name.toLowerCase())));
+
   const categories = [
     { id: "all", label: "All Items" },
     { id: "vegetables", label: "Vegetables" },
@@ -107,6 +109,7 @@ const Marketplace = () => {
     accepted: "bg-primary/15 text-primary",
     rejected: "bg-destructive/15 text-destructive",
     countered: "bg-secondary/15 text-secondary",
+    checked_out: "bg-emerald-500/20 text-emerald-700",
   };
 
   return (
@@ -156,7 +159,7 @@ const Marketplace = () => {
         {/* Browse Tab */}
         {tab === "browse" && (
           <>
-            <LiveMarketPriceBanner crop={category === "all" ? "maize" : category} />
+            <LiveMarketPriceBanner crops={uniqueCrops} />
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
               <div className="relative max-w-md w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

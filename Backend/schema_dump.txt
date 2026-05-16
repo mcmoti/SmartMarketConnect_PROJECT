@@ -16,7 +16,6 @@ Model: User (App: smc_backend.apps.users)
     - profile_image: FileField
     - bio: TextField
     - location: CharField
-    - profile_data: JSONField
     - latitude: DecimalField
     - longitude: DecimalField
     - is_verified: BooleanField
@@ -48,6 +47,25 @@ Model: ContactInquiry (App: smc_backend.apps.users)
     - message: TextField
     - status: CharField
     - created_at: DateTimeField
+
+Model: FarmerProfile (App: smc_backend.apps.users)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - user: OneToOneField -> User
+    - farm_size: DecimalField
+    - farming_type: CharField
+    - certifications: TextField
+    - created_at: DateTimeField
+    - updated_at: DateTimeField
+
+Model: BuyerProfile (App: smc_backend.apps.users)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - user: OneToOneField -> User
+    - business_name: CharField
+    - buyer_type: CharField
+    - created_at: DateTimeField
+    - updated_at: DateTimeField
 
 Model: Product (App: smc_backend.apps.products)
   Primary Key: id (BigAutoField)
@@ -154,6 +172,7 @@ Model: Order (App: smc_backend.apps.transactions)
 Model: Invoice (App: smc_backend.apps.transactions)
   Primary Key: id (BigAutoField)
   Fields:
+    - invoice_number: CharField
     - order: OneToOneField -> Order
     - buyer: ForeignKey -> User
     - farmer: ForeignKey -> User
@@ -240,7 +259,6 @@ Model: CreditRequest (App: smc_backend.apps.credit)
     - amount_requested: DecimalField
     - purpose: TextField
     - duration_months: IntegerField
-    - supporting_documents: JSONField
     - collateral_description: TextField
     - collateral_value: DecimalField
     - credit_score_at_request: IntegerField
@@ -257,6 +275,15 @@ Model: CreditRequest (App: smc_backend.apps.credit)
     - created_at: DateTimeField
     - reviewed_at: DateTimeField
     - approved_at: DateTimeField
+
+Model: CreditDocument (App: smc_backend.apps.credit)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - credit_request: ForeignKey -> CreditRequest
+    - document_type: CharField
+    - document_url: CharField
+    - verified: BooleanField
+    - uploaded_at: DateTimeField
 
 Model: Cart (App: smc_backend.apps.cart)
   Primary Key: id (BigAutoField)
@@ -326,7 +353,6 @@ Model: BuyerPreference (App: smc_backend.apps.geo)
   Primary Key: id (BigAutoField)
   Fields:
     - buyer: OneToOneField -> User
-    - preferred_crops: JSONField
     - search_radius_km: IntegerField
     - min_rating: FloatField
     - notify_on_match: BooleanField
@@ -344,3 +370,14 @@ Model: BuyerFarmerMatch (App: smc_backend.apps.geo)
     - interaction_count: IntegerField
     - created_at: DateTimeField
     - last_interaction: DateTimeField
+
+Model: Crop (App: smc_backend.apps.geo)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - name: CharField
+
+Model: BuyerPreferredCrop (App: smc_backend.apps.geo)
+  Primary Key: id (BigAutoField)
+  Fields:
+    - buyer: ForeignKey -> User
+    - crop: ForeignKey -> Crop

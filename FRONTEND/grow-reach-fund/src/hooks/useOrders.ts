@@ -122,6 +122,7 @@ export const useCreateOrder = () => {
         return djangoAPI.post(`/bids/${data.bid_id}/accept_counter/`, {
           payment_term: data.payment_term || "upfront",
           amount_paid: data.amount_paid,
+          phone_number: data.phone_number || "+254000000000"
         });
       }
       

@@ -231,25 +231,27 @@ class BidViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def accept_counter(self, request, pk=None):
-        """Accept a counter offer (buyer only)."""
+        """Accept a counter offer or checkout an accepted bid (buyer only)."""
         bid = self.get_object()
         
         if bid.buyer != request.user:
             raise permissions.PermissionDenied('Only the buyer can accept a counter offer.')
             
-        if bid.status != 'countered':
-            return Response({'error': 'Only countered bids can be accepted'}, status=status.HTTP_400_BAD_REQUEST)
+        if bid.status not in ['countered', 'accepted']:
+            return Response({'error': 'Only countered or accepted bids can be checked out'}, status=status.HTTP_400_BAD_REQUEST)
             
-        bid.status = 'accepted'
+        bid.status = 'checked_out'
         bid.save()
         
         from smc_backend.apps.transactions.models import Transaction, Order, Invoice, Receipt
         from decimal import Decimal
         
+        agreed_price = bid.counter_price if bid.counter_price else bid.bid_price
+        
         try:
-            total_amount = Decimal(str(bid.counter_price)) * Decimal(str(bid.quantity_kg))
+            total_amount = Decimal(str(agreed_price)) * Decimal(str(bid.quantity_bid))
         except:
-            total_amount = bid.counter_price * bid.quantity_kg
+            total_amount = agreed_price * bid.quantity_bid
             
         payment_term = request.data.get('payment_term', 'upfront')
         amount_paid = Decimal(str(request.data.get('amount_paid', total_amount)))
@@ -267,18 +269,22 @@ class BidViewSet(viewsets.ModelViewSet):
                 amount=amount_paid,
                 transaction_type='bid_acceptance',
                 status='completed',
-                description=f'Payment for accepted counter offer ({payment_term})'
+                description=f'Payment for bid checkout ({payment_term})'
             )
         
+        phone_number = request.data.get('phone_number', '')
+        if not phone_number:
+            phone_number = getattr(bid.buyer, 'phone_number', '+254000000000')
+
         order = Order.objects.create(
             buyer=bid.buyer,
             farmer=bid.product.farmer,
             product=bid.product,
             transaction=transaction,
-            quantity=bid.quantity_kg,
-            unit_price=bid.counter_price,
+            quantity=bid.quantity_bid,
+            unit_price=agreed_price,
             total_price=total_amount,
-            phone_number=getattr(bid.buyer, 'phone_number', '+254000000000'),
+            phone_number=phone_number,
             status='confirmed',
             payment_term=payment_term,
             amount_paid=amount_paid

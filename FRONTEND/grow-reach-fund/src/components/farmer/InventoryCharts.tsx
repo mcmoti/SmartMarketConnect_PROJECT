@@ -78,7 +78,7 @@ const InventoryCharts = ({ inventory, payments, staffHours }: Props) => {
     const rows = inventory.map(item => {
       const days = getDaysInStore(item.created_at);
       const status = days < 7 ? "Fresh" : days <= 30 ? "Aging" : "Old Stock";
-      return `"${item.crop}",${item.quantity_kg},${days},"${status}"`;
+      return `"${item.crop}",${Number(item.quantity_kg).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/,/g, '')},${days},"${status}"`;
     });
     
     const csvContent = headers.concat(rows).join("\n");
@@ -102,7 +102,7 @@ const InventoryCharts = ({ inventory, payments, staffHours }: Props) => {
     const tableData = inventory.map(item => {
       const days = getDaysInStore(item.created_at);
       const status = days < 7 ? "Fresh" : days <= 30 ? "Aging" : "Old Stock";
-      return [item.crop, `${item.quantity_kg} kg`, `${days} days`, status];
+      return [item.crop, `${Number(item.quantity_kg).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg`, `${days} days`, status];
     });
 
     autoTable(doc, {
@@ -119,14 +119,14 @@ const InventoryCharts = ({ inventory, payments, staffHours }: Props) => {
   // Stock levels by crop
   const stockData = useMemo(() => {
     const map: Record<string, number> = {};
-    inventory.forEach((i) => { map[i.crop] = (map[i.crop] || 0) + i.quantity_kg; });
+    inventory.forEach((i) => { map[i.crop] = (map[i.crop] || 0) + Number(i.quantity_kg); });
     return Object.entries(map).map(([crop, qty]) => ({ crop, quantity: qty }));
   }, [inventory]);
 
   // Stock value distribution (pie)
   const stockValueData = useMemo(() => {
     const map: Record<string, number> = {};
-    inventory.forEach((i) => { map[i.crop] = (map[i.crop] || 0) + i.quantity_kg; });
+    inventory.forEach((i) => { map[i.crop] = (map[i.crop] || 0) + Number(i.quantity_kg); });
     return Object.entries(map).map(([name, value]) => ({ name, value }));
   }, [inventory]);
 
@@ -135,7 +135,7 @@ const InventoryCharts = ({ inventory, payments, staffHours }: Props) => {
     const map: Record<string, number> = {};
     filteredPayments.forEach((p) => {
       const key = new Date(p.date).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-      map[key] = (map[key] || 0) + p.amount;
+      map[key] = (map[key] || 0) + Number(p.amount);
     });
     return Object.entries(map).map(([date, amount]) => ({ date, amount }));
   }, [filteredPayments]);
@@ -143,15 +143,15 @@ const InventoryCharts = ({ inventory, payments, staffHours }: Props) => {
   // Revenue by crop
   const revenueByCrop = useMemo(() => {
     const map: Record<string, number> = {};
-    filteredPayments.forEach((p) => { map[p.crop_name] = (map[p.crop_name] || 0) + p.amount; });
+    filteredPayments.forEach((p) => { map[p.crop_name] = (map[p.crop_name] || 0) + Number(p.amount); });
     return Object.entries(map).map(([crop, revenue]) => ({ crop, revenue }));
   }, [filteredPayments]);
 
   // Financial summary
-  const totalRevenue = filteredPayments.reduce((s, p) => s + p.amount, 0);
-  const totalStaffCost = filterByPeriod(staffHours.map((s) => ({ ...s, date: s.date }))).reduce((s, h) => s + h.hours * (h.rate_per_hour || 0), 0);
+  const totalRevenue = filteredPayments.reduce((s, p) => s + Number(p.amount), 0);
+  const totalStaffCost = filterByPeriod(staffHours.map((s) => ({ ...s, date: s.date }))).reduce((s, h) => s + Number(h.hours) * (Number(h.rate_per_hour) || 0), 0);
   const netIncome = totalRevenue - totalStaffCost;
-  const totalStockKg = inventory.reduce((s, i) => s + i.quantity_kg, 0);
+  const totalStockKg = inventory.reduce((s, i) => s + Number(i.quantity_kg), 0);
   const agingItems = inventory.filter((i) => getDaysInStore(i.created_at) > 30).length;
 
   return (
@@ -318,7 +318,7 @@ const InventoryCharts = ({ inventory, payments, staffHours }: Props) => {
                 return (
                   <tr key={item.id} className="border-b border-border last:border-0">
                     <td className="p-4 font-medium text-foreground">{item.crop}</td>
-                    <td className="p-4 text-muted-foreground">{item.quantity_kg} kg</td>
+                    <td className="p-4 text-muted-foreground">{Number(item.quantity_kg).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg</td>
                     <td className={`p-4 font-semibold ${getAgeColor(days)}`}>{days} days</td>
                     <td className="p-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getAgeBg(days)} ${getAgeColor(days)}`}>
